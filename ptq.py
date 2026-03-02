@@ -47,10 +47,8 @@ def train() -> None:
         model.lm_head.weight.data = model.model.embed_tokens.weight.data.clone()
     model.cuda()
 
-    model = ptq_model(ptq_args, model, model_args)
-    model.seqlen = training_args.model_max_length
+    # Load tokenizer before PTQ (needed for GPTQ calibration)
     if local_rank == 0:
-        log.info("Model PTQ completed {}".format(model))
         log.info("Start to load tokenizer...")
     tokenizer = Qwen2TokenizerFast.from_pretrained(
         pretrained_model_name_or_path=model_args.input_model,
@@ -63,6 +61,11 @@ def train() -> None:
         token=model_args.access_token,
     )
     log.info("Complete tokenizer loading...")
+
+    model = ptq_model(ptq_args, model, model_args, tokenizer)
+    model.seqlen = training_args.model_max_length
+    if local_rank == 0:
+        log.info("Model PTQ completed {}".format(model))
     model.config.use_cache = False
 
     testloader = data_utils.get_wikitext2(

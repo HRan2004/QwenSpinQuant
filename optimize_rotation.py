@@ -92,9 +92,7 @@ def train() -> None:
     )
     log.info("Complete tokenizer loading...")
     model.config.use_cache = False
-    calibration_datasets = datasets.load_dataset(
-        "Salesforce/wikitext", "wikitext-2-raw-v1"
-    )
+    calibration_datasets = datasets.load_from_disk("data/wikitext-2-raw-v1")
     train_data = CustomJsonDataset(
         calibration_datasets["train"],
         tokenizer,

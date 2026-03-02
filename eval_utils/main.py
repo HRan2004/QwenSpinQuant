@@ -19,7 +19,7 @@ from utils.convert_to_executorch import (
 )
 
 
-def ptq_model(args, model, model_args=None):
+def ptq_model(args, model, model_args=None, tokenizer=None):
     transformers.set_seed(args.seed)
     model.eval()
 
@@ -61,6 +61,7 @@ def ptq_model(args, model, model_args=None):
                 model=model_args.input_model,
                 seqlen=2048,
                 eval_mode=False,
+                tokenizer=tokenizer,
             )
             if args.export_to_et:
                 # quantize lm_head and embedding with 8bit per-channel quantization with rtn for executorch

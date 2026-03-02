@@ -18,18 +18,25 @@ import transformers
 
 def get_wikitext2(nsamples=128, seed=0, seqlen=2048, model="", tokenizer=None, eval_mode=False):
     if tokenizer is None:
-        tokenizer = transformers.AutoTokenizer.from_pretrained(model, use_fast=False)
+        tokenizer = transformers.AutoTokenizer.from_pretrained(model, use_fast=True)
+
+    # Try local data first, fallback to HuggingFace Hub
+    try:
+        dataset = datasets.load_from_disk("data/wikitext-2-raw-v1")
+    except:
+        dataset = datasets.load_dataset("Salesforce/wikitext", "wikitext-2-raw-v1")
 
     if eval_mode:
-        testdata = datasets.load_dataset("Salesforce/wikitext", "wikitext-2-raw-v1")[
-            "test"
-        ]
+        testdata = dataset["test"]
         testenc = tokenizer("\n\n".join(testdata["text"]), return_tensors="pt")
         return testenc
     else:
-        traindata = datasets.load_dataset("Salesforce/wikitext", "wikitext-2-raw-v1")[
-            "train"
-        ]
+        traindata = dataset["train"]
+        # Limit training data size for GPTQ calibration to avoid OOM
+        # Use only first 1000 samples (~300k tokens) instead of full dataset (2.5M tokens)
+        max_train_samples = 1000
+        if len(traindata) > max_train_samples:
+            traindata = traindata.select(range(max_train_samples))
         trainenc = tokenizer("\n\n".join(traindata["text"]), return_tensors="pt")
         random.seed(seed)
         trainloader = []

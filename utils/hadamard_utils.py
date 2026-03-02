@@ -35,6 +35,11 @@ def get_hadK(n, transpose=False):
 
         K = 108
         hadK = get_had108().T if transpose else get_had108()
+    elif n % 76 == 0:  # qwen2.5-0.5b intermediate
+        assert is_pow2(n // 76)
+
+        K = 76
+        hadK = get_had76().T if transpose else get_had76()
     elif n % 60 == 0:  # llama-1-13b 3x hidden
         assert is_pow2(n // 60)
 
