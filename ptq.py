@@ -47,7 +47,7 @@ def train() -> None:
         model.lm_head.weight.data = model.model.embed_tokens.weight.data.clone()
     model.cuda()
 
-    # Load tokenizer before PTQ (needed for GPTQ calibration)
+    # Load tokenizer before PTQ to pass to GPTQ calibration
     if local_rank == 0:
         log.info("Start to load tokenizer...")
     tokenizer = Qwen2TokenizerFast.from_pretrained(

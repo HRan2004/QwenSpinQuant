@@ -2,72 +2,31 @@
 
 ## Model: Qwen2.5-0.5B
 
-### Experiment 1: W16A8KV8 Rotation Training (100 steps)
+| Config | W bits | A bits | KV bits | Method | Rotation Steps | Train Time | Train Loss | Final Epoch | PPL | Δ vs FP16 | Δ vs No Rotation | Notes |
+|--------|--------|--------|---------|--------|----------------|------------|------------|-------------|-----|-----------|------------------|-------|
+| FP16 baseline | 16 | 16 | 16 | - | - | - | - | - | 14.25 | - | - | No quantization |
+| W16A8KV8 baseline | 16 | 8 | 8 | Asymmetric | - | - | - | - | 14.58 | +0.33 | - | No rotation, k/v groupsize=64 |
+| W16A8KV8 + SpinQuant | 16 | 8 | 8 | Asymmetric | 100 | 6m43s | 16.81 | 0.08 | 14.48 | +0.23 | -0.10 | 30% recovery rate, 4.05s/it |
+| W16A8KV8 + SpinQuant | 16 | 8 | 8 | Asymmetric | 2000 | 2h15m10s | 21.45 | 1.63 | 14.48 | +0.23 | -0.10 | No improvement vs 100 steps, possible overfitting |
+| W4A8KV8 + SpinQuant + GPTQ | 4 | 8 | 8 | GPTQ | 100 | 6m43s | 16.81 | 0.08 | 15.60 | +1.35 | TBD | Reused W16A8KV8 rotation, need baseline |
 
-**Training config:**
+## Training Config (Common)
+
 - Script: `scripts/run_optimize_rotation.sh`
 - GPU: 1x (single node)
 - Batch size: 1
 - Learning rate: 1.5 (cosine schedule)
-- Max steps: 100
-- Quantization: W16A8KV8 (asymmetric, k/v groupsize=64)
-- Training time: 6m43s (4.05s/it)
-- Final epoch: 0.08
-- Train loss: 16.81
+- Logging steps: 1 (100 steps) / 10 (2000 steps)
 
-**PTQ Evaluation (WikiText2 perplexity):**
+## Key Findings
 
-| Config | PPL |
-|--------|-----|
-| FP16 (no quantization) | 14.25 |
-| W16A8KV8 (no rotation) | 14.58 |
-| W16A8KV8 + SpinQuant (100 steps) | 14.48 |
-
-**Analysis:**
-- Quantization degradation: +0.33 ppl (14.25 → 14.58)
-- SpinQuant recovery: -0.10 ppl (14.58 → 14.48)
-- Recovery rate: 30% of quantization loss recovered
-
----
-
-### Experiment 2: W16A8KV8 Rotation Training (2000 steps, 20x)
-
-**Training config:**
-- Same as Experiment 1, except:
-- Max steps: 2000
-- Logging steps: 10
-- Training time: 2h15m10s (4.04s/it)
-- Final epoch: 1.63
-- Train loss: 21.45 (higher than 100-step run)
-
-**PTQ Evaluation (WikiText2 perplexity):**
-
-| Config | PPL |
-|--------|-----|
-| FP16 (no quantization) | 14.25 |
-| W16A8KV8 (no rotation) | 14.58 |
-| W16A8KV8 + SpinQuant (100 steps) | 14.48 |
-| W16A8KV8 + SpinQuant (2000 steps) | 14.48 |
-
-**Analysis:**
-- 20x more training steps yielded no improvement (14.482 → 14.479)
-- Train loss increased from 16.8 to 21.4 over longer training, suggesting overfitting or instability
-- W16A8KV8 quantization degradation is too small (0.33 ppl) for rotation to make a significant difference
-- 100 steps is sufficient for this configuration
-
----
-
-## Summary
-
-| Config | Steps | Train Loss | PPL | Δ vs FP16 | Δ vs No Rotation |
-|--------|-------|-----------|-----|-----------|-----------------|
-| FP16 | - | - | 14.25 | - | - |
-| W16A8KV8 | - | - | 14.58 | +0.33 | - |
-| W16A8KV8 + SpinQuant | 100 | 16.81 | 14.48 | +0.23 | -0.10 |
-| W16A8KV8 + SpinQuant | 2000 | 21.45 | 14.48 | +0.23 | -0.10 |
+1. **100 steps is sufficient for W16A8KV8**: 20x more training (2000 steps) yielded no improvement, train loss increased suggesting overfitting
+2. **W16A8KV8 quantization degradation is small**: Only +0.33 ppl, SpinQuant recovers 30% (-0.10 ppl)
+3. **W4A8KV8 shows larger degradation**: +1.35 ppl vs FP16, need to test baseline without rotation to measure SpinQuant effectiveness
 
 ## TODO
 
-- [ ] Test with W4A8 quantization (more aggressive, larger degradation expected)
-- [ ] Test with W4A4KV4 quantization (SpinQuant's target scenario)
+- [ ] Test W4A8KV8 baseline (no rotation) to measure SpinQuant effectiveness
+- [ ] Test W4A8KV8 + SpinQuant + RTN (compare with GPTQ)
+- [ ] Test W4A4KV4 quantization (SpinQuant's target scenario)
 - [ ] Try multi-GPU training (8x) to increase effective batch size

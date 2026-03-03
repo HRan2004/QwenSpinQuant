@@ -32,11 +32,6 @@ def get_wikitext2(nsamples=128, seed=0, seqlen=2048, model="", tokenizer=None, e
         return testenc
     else:
         traindata = dataset["train"]
-        # Limit training data size for GPTQ calibration to avoid OOM
-        # Use only first 1000 samples (~300k tokens) instead of full dataset (2.5M tokens)
-        max_train_samples = 1000
-        if len(traindata) > max_train_samples:
-            traindata = traindata.select(range(max_train_samples))
         trainenc = tokenizer("\n\n".join(traindata["text"]), return_tensors="pt")
         random.seed(seed)
         trainloader = []

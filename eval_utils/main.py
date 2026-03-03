@@ -56,12 +56,12 @@ def ptq_model(args, model, model_args=None, tokenizer=None):
 
         elif not args.w_rtn:  # GPTQ Weight Quantization
             trainloader = data_utils.get_wikitext2(
-                nsamples=args.nsamples,
+                nsamples=32,  # Reduced from args.nsamples (128) to avoid OOM
                 seed=args.seed,
                 model=model_args.input_model,
+                tokenizer=tokenizer,  # Pass tokenizer to avoid redundant loading
                 seqlen=2048,
                 eval_mode=False,
-                tokenizer=tokenizer,
             )
             if args.export_to_et:
                 # quantize lm_head and embedding with 8bit per-channel quantization with rtn for executorch

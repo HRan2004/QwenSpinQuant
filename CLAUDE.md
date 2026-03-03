@@ -14,7 +14,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 ### 用法
 
 - `rg` — 同步后登录服务器，工作目录为 `/data/disk1/guohaoran/transformers`
-- `rg "command"` — 同步后在远程执行命令，如 `rg "python run.py"`
+- `rg "command"` — 同步后在远程执行命令，如 `rg "uv run run.py"`
 
 ### 原理
 
@@ -64,11 +64,11 @@ torchrun --nproc_per_node=1 ptq.py --input_model <model> --w_bits 16 --a_bits 16
 
 ### 当前实验结果（Qwen2.5-0.5B, W16A8KV8）
 
-| 配置 | WikiText2 PPL |
-|------|--------------|
-| FP16 原模型 | 14.25 |
-| W16A8KV8 无旋转 | 14.58 |
-| W16A8KV8 + SpinQuant | 14.48 |
+| 配置                 | WikiText2 PPL |
+| -------------------- | ------------- |
+| FP16 原模型          | 14.25         |
+| W16A8KV8 无旋转      | 14.58         |
+| W16A8KV8 + SpinQuant | 14.48         |
 
 ## Project Overview
 
